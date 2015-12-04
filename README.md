@@ -2,6 +2,8 @@ Chat Server Secure
 =
 
 ##CpE 490 Project
+Original Source: https://www.blubgoo.com/chatroom-in-c/
+
 Add nonsense client side encryption for project. Client must enter password on entering to get non garbled text - encrypt/decrypt only happens on client side. Must check for command args client side as server will not have the ability to decrypt.
 
 Use openssl s_client -connect eva:5000 from linux lab to connect.
