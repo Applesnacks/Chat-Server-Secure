@@ -313,6 +313,7 @@ int main(int argc, char *argv[]){
 	pthread_t tid;
 	SSL_CTX *ctx = NULL;
 	SSL *ssl = NULL;
+	const int opt = 1;
 	const char cert[] = "cert.pem";
 	const char key[] = "key.pem";
 
@@ -330,7 +331,7 @@ int main(int argc, char *argv[]){
 	load_certificate(ctx, cert, key);
 	
 	/* Accept multiple connections */
-	if(setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, (char *)&opt, sizeof(opt)) < 0){
+	if(setsockopt(listenfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0){
 		perror("Socket options failed");
 		LOG("[error] could not set socket options");
 		return 1;
