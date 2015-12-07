@@ -327,7 +327,7 @@ int main(int argc, char *argv[]){
 	OpenSSL_add_all_algorithms();
 	SSL_load_error_strings();
 	SSL_library_init();
-	ctx = SSL_CTX_new(SSLv3_server_method());
+	ctx = SSL_CTX_new(TLSv1_2_server_method());
 	load_certificate(ctx, cert, key);
 	
 	/* Accept multiple connections */
