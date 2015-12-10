@@ -1,0 +1,20 @@
+{
+	"name": "CPE-490 Chatroom Client",
+	"description": "Let's connect to our chatserver",
+	"version": "1.0",
+	"manifest_version": 2,
+	"app": {
+		"background": {
+			"scripts": ["eventPage.js"],
+			"persistent": false
+		}
+	},
+	"icons": {
+		"128": "icon.png"
+	},
+	"sockets": {
+		"tcp": {
+			"connect": ["*"]
+		}
+	}
+}
