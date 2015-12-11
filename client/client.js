@@ -29,7 +29,7 @@ function log(contents) {
         userName = contents.split("renamed to [")[1].split("]")[0];
     }
 	var output = document.getElementById("output");
-	output.innerHTML = output.innerHTML + "<br>" + contents.replace("\n", "<br>");
+	output.innerHTML = output.innerHTML + "<br>" + contents.slice(0,-1).replace("\n", "");
 }
 
 function log_others(contents){
@@ -38,7 +38,7 @@ function log_others(contents){
     }
 
 	var output = document.getElementById("output");
-	output.innerHTML = output.innerHTML + "<br>" + contents.replace("\n", "<br>");
+	output.innerHTML = output.innerHTML + "<br>" + contents.replace("\n", "");
 }
 
 tcp.create(socketProperties, function(newSocketInfo) {
@@ -111,7 +111,7 @@ function send() {
 
 function checkTextOut(text) {
 	var pw = document.getElementById("pw").value;	
-    textLen = text.length;
+    var textLen = text.length;
 	var command = 0;
 
     switch (text.split(" ", 1).toString().toLowerCase()) {
@@ -141,8 +141,8 @@ function checkTextOut(text) {
 	});
 	if (command) 
 	    log(text);
-	else 
-	    log("[" + userName + "] " + text);
+//	else 
+//	    log("[" + userName + "] " + text);
 }
 
 function onReceive(info) {
@@ -156,11 +156,13 @@ function onReceive(info) {
 }
 
 function checkTextIn(text) {
-    textLen = text.length;
+    var textLen = text.length;
 	var pw = document.getElementById("pw").value;
 	var output = "";
     var re = new RegExp(/\[\S+\] /g);
-    
+    var meRe = new RegExp(/\*\*\S+ /g);
+    var me = text.match(meRe);
+
 	var users = text.match(re);
 	var message = text.replace(re,'');
 	if (users) {
@@ -178,9 +180,14 @@ function checkTextIn(text) {
 	    		output = output + decrypt(message,pw);
 	    }
 	}
-    else {
-        output = text;
+	else if (me){
+		text = text.replace(meRe, '');
+        output = me[0] + decrypt(text.slice(0,-2),pw) + "**";
     }
+    else
+    	output = text;
+
+
     log_others(output);
 }
 
