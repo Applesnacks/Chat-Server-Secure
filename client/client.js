@@ -24,23 +24,19 @@ function str2ab(str) {
 	return buf;
 }
 
-function onReceive(info) {
-	console.log(info);
-	if (info.socketId != socketId) {
-		return;
-	}
-	log(ab2str(info.data));
+function log(contents) {
+    if (contents.indexOf(userName + "] renamed to [") != -1) {
+        userName = contents.split("renamed to [")[1].split("]")[0];
+    }
+	var output = document.getElementById("output");
+	output.innerHTML = output.innerHTML + "<br>" + contents.replace("\n", "<br>");
 }
 
-
-function log(contents) {
-    if (userName === undefined && contents.indexOf("] joined") != -1) {
+function log_others(contents){
+   if (userName === undefined && contents.indexOf("] joined") != -1) {
         userName = contents.split("] [")[1].split("]")[0];
     }
 
-    else if (contents.indexOf(userName + "] renamed to [") != -1) {
-        userName = contents.split("renamed to [")[1].split("]")[0];
-    }
 	var output = document.getElementById("output");
 	output.innerHTML = output.innerHTML + "<br>" + contents.replace("\n", "<br>");
 }
@@ -73,53 +69,120 @@ function disconnect() {
     log('Disconnected from server');
 }
 
-function send() {
-	var input = document.getElementById("input");
-	tcp.send(socketId, str2ab(input.value), function(resultCode, bytesSent) {
-		console.log(resultCode);
-	});
-	if (input.value.charAt(0) == "\\") {
-	    log(input.value);
-	}
-	else {
-	    log("[" + userName + "] " + input.value);
-	}
-	input.value = "";
+function blockInputString(input,length){
+	return input.match(new RegExp('.{1,' + length + '}', 'g'));
 }
 
-document.getElementById('connect').onclick = connect;
-document.getElementById('send').onclick = send;
+function encrypt(input,pw){
+	var splitInput = blockInputString(input,15);		//Because breaks for block size 16 for some reason.
 
-//check for a command that won't be encrypted
+	var ciphertext = [];
+	for(i=0;i<splitInput.length;i++){
+		ciphertext.push(CryptoJS.AES.encrypt(splitInput[i], pw,{hasher:CryptoJS.SHA256}).toString()+'|');
+	}
+	ciphertext[ciphertext.length-1] = ciphertext[ciphertext.length-1].slice(0, -1);	//Remove delim on last.
+	console.log("PLAINTEXT:" + splitInput.toString());
+	
+	console.log("CIPHERTEXT:" + ciphertext.toString());
+
+	return ciphertext.join('');
+}
+
+function decrypt(input,pw){
+	var splitInput = input.match(new RegExp(/[^|]+/g));
+
+	console.log("CIPHERTEXT:" + splitInput.toString());
+
+	var decRaw = [];
+	for(i=0;i<splitInput.length;i++){
+		decRaw.push(CryptoJS.AES.decrypt(splitInput[i], pw).toString(CryptoJS.enc.Utf8));
+	}
+	console.log("PLAINTEXT:" + decRaw.toString());
+
+	return decRaw.join('');
+}
+
+function send() {
+	var input = document.getElementById("input").value;
+	var output = checkTextOut(input);
+	document.getElementById("input").value = "";
+
+}
+
 function checkTextOut(text) {
+	var pw = document.getElementById("pw").value;	
     textLen = text.length;
-    switch (text.split(" ", 1)) {
-        case "\QUIT":
-            //send to server "\QUIT"
+	var command = 0;
+
+    switch (text.split(" ", 1).toString().toLowerCase()) {
+        case "\\quit":
+            var output = text;
+            command = 1;
             break;
-        case "\PING":
-            //send server "\PING"
+        case "\\ping":
+            var output = text;
+            command = 2;
             break;
-        case "\NAME":
-            //send server "\NAME"
+        case "\\name":
+            var output = text;
+            command = 3;
             break;
-        case "\ME":
-            //send server "\ME " + encrypt(text.slice(4,textLen));
+        case "\\me":
+            var output =  "\\ME " + encrypt(text.slice(4,textLen),pw);
+            command = 4;
             break;
         default:
-            //send server encrypt(text);
+            var output = encrypt(text,pw);
     }
+    console.log("Sending:" + output.toString());
+
+	tcp.send(socketId, str2ab(output), function(resultCode, bytesSent) {
+		console.log(resultCode);
+	});
+	if (command) 
+	    log(text);
+	else 
+	    log("[" + userName + "] " + text);
+}
+
+function onReceive(info) {
+	console.log(info);
+	checkTextIn(ab2str(info.data));
+	
+	if (info.socketId != socketId) {
+		return;
+	}
 
 }
 
 function checkTextIn(text) {
     textLen = text.length;
-    if (text.split(" ", 1) == "\ME") {
-        var messageInfo = text.split(" ", 2);
-        //receive messageInfo[0] + " " + messageInfo[1] + " " + decrypt(text.slice(4,textLen));
-    }
+	var pw = document.getElementById("pw").value;
+	var output = "";
+    var re = new RegExp(/\[\S+\] /g);
+    
+	var users = text.match(re);
+	var message = text.replace(re,'');
+	if (users) {
+		var length=users.length;
+		if (userName === undefined){
+			output = text;
+		}
+	    else if (length>0) {
+	    	for (i=0;i<length;i++){
+	    		output = output + users[i] + ' ';
+	    	}
+	    	if (users[0]=="[server] ")
+	    		output = output + message;
+	    	else
+	    		output = output + decrypt(message,pw);
+	    }
+	}
     else {
-        var messageInfo = text.split(" ", 1);
-        //receive messageInfo[0] + " " + decrypt(text);
+        output = text;
     }
+    log_others(output);
 }
+
+document.getElementById('connect').onclick = connect;
+document.getElementById('send').onclick = send;

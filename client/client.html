@@ -4,11 +4,32 @@
     <title>CPE-490 Chatroom Client</title>
   </head>
   <body>
-	<input id="server" type="text" value="cpe490.dylanpraul.com">
-	<input id="port" type="text" value="5000">
-	<button id="connect">Connect</button>
-	<input id="input" type="text"><button id="send">Send</button>
-	<div id="output"></div>
+  <label>Server <input id="server" type="text" value="cpe490.dylanpraul.com"></label>
+<br>     
+  <label>Port <input id="port" type="text" value="5000"></label>
+ <br> 
+  <!--Because this is fake I'm ok with it.-->
+  <label>Password <input id="pw" type="text" value="It's a Strong Password I Swear"></label>
+<br>
+  <button id="connect">Connect</button>
+<br>
+<br>
+  <input id="input" type="text"><button id="send"onkeydown="if (event.keyCode == 13) document.getElementById('btnSearch').click()">Send</button>
+  <div id="output"></div>
     <script src="client.js"></script>
+    <script src="cryptojs/components/core.js"></script>
+    <script src="cryptojs/rollups/sha1.js"></script>
+    <script src="cryptojs/rollups/sha256.js"></script>
+    <script src="cryptojs/components/enc-base64.js"></script>
+    <script src="cryptojs/components/pbkdf2.js"></script>
+    <script src="cryptojs/components/evpkdf.js"></script>
+    <script src="cryptojs/components/cipher-core.js"></script>
+    <script src="cryptojs/rollups/aes.js"></script>
+    <script src="cryptojs/components/md5-min.js"></script>
+    <script src="cryptojs/components/evpkdf.js"></script>
+    <script src="cryptojs/components/pbkdf2.js"></script>
+    <script src="cryptojs/components/lib-typedarrays.js"></script>
+    <script src="cryptojs/components/pad-zeropadding-min.js"></script>
+
   </body>
 </html>
