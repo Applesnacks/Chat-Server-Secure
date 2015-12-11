@@ -89,3 +89,37 @@ function send() {
 
 document.getElementById('connect').onclick = connect;
 document.getElementById('send').onclick = send;
+
+//check for a command that won't be encrypted
+function checkTextOut(text) {
+    textLen = text.length;
+    switch (text.split(" ", 1)) {
+        case "\QUIT":
+            //send to server "\QUIT"
+            break;
+        case "\PING":
+            //send server "\PING"
+            break;
+        case "\NAME":
+            //send server "\NAME"
+            break;
+        case "\ME":
+            //send server "\ME " + encrypt(text.slice(4,textLen));
+            break;
+        default:
+            //send server encrypt(text);
+    }
+
+}
+
+function checkTextIn(text) {
+    textLen = text.length;
+    if (text.split(" ", 1) == "\ME") {
+        var messageInfo = text.split(" ", 2);
+        //receive messageInfo[0] + " " + messageInfo[1] + " " + decrypt(text.slice(4,textLen));
+    }
+    else {
+        var messageInfo = text.split(" ", 1);
+        //receive messageInfo[0] + " " + decrypt(text);
+    }
+}
