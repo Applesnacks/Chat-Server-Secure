@@ -29,7 +29,8 @@ function log(contents) {
         userName = contents.split("renamed to [")[1].split("]")[0];
     }
 	var output = document.getElementById("output");
-	output.innerHTML = output.innerHTML + "<br>" + contents.replace("\n", "<br>");
+	output.innerHTML = output.innerHTML + "<br>" + contents.replace("\r\n", "<br>");
+	output.scrollTop = output.scrollHeight;
 }
 
 function log_others(contents){
@@ -104,9 +105,11 @@ function decrypt(input,pw){
 
 function send() {
 	var input = document.getElementById("input").value;
+	if (input.length == 0) {
+		return;
+	}
 	var output = checkTextOut(input);
 	document.getElementById("input").value = "";
-
 }
 
 //check to see what should and should not be encrypted
@@ -190,5 +193,12 @@ function checkTextIn(text) {
     log_others(output);
 }
 
+function onMessageType(event) {
+	if (event.keyCode == 13) {
+		send();
+	}
+}
+
 document.getElementById('connect').onclick = connect;
 document.getElementById('send').onclick = send;
+document.getElementById('input').onkeypress = onMessageType;
