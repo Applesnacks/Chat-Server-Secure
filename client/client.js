@@ -34,11 +34,11 @@ function onReceive(info) {
 
 
 function log(contents) {
-    if (userName === undefined && contents.search("] joined") != -1) {
+    if (userName === undefined && contents.indexOf("] joined") != -1) {
         userName = contents.split("] [")[1].split("]")[0];
     }
 
-    else if (contents.search(userName + "] renamed to [") != -1) {
+    else if (contents.indexOf(userName + "] renamed to [") != -1) {
         userName = contents.split("renamed to [")[1].split("]")[0];
     }
 	var output = document.getElementById("output");
