@@ -10,6 +10,7 @@ window.secureOptions = {
 		"max": "tls1"
 	}
 };
+window.userName = undefined;
 
 
 function ab2str(buf) {
@@ -35,6 +36,9 @@ function onReceive(info) {
 
 
 function log(contents) {
+    if (userName === undefined && contents.search('] joined') != -1) {
+        userName = contents.substr((contents.search('[ ]') + 2), contents.search('] joined'));
+    }
 	var output = document.getElementById("output");
 	output.innerHTML = output.innerHTML + "<br>" + contents;
 }
@@ -55,6 +59,16 @@ function connect() {
 			});
 		});
 	});
+
+	this.innerHTML = "Disconnect";
+	this.onclick = disconnect;
+}
+
+function disconnect() {
+    tcp.disconnect(socketId, function () { });
+    this.innerHTML = "Connect";
+    this.onclick = connect;
+    log('Disconnected from server');
 }
 
 function send() {
@@ -62,7 +76,7 @@ function send() {
 	tcp.send(socketId, str2ab(input.value), function(resultCode, bytesSent) {
 		console.log(resultCode);
 	});
-	log(input.value);
+	log('[' + userName + ']' + input.value);
 	input.value = "";
 }
 
