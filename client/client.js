@@ -78,7 +78,12 @@ function send() {
 	tcp.send(socketId, str2ab(input.value), function(resultCode, bytesSent) {
 		console.log(resultCode);
 	});
-	log("[" + userName + "] " + input.value);
+	if (input.value.charAt(0) == "\\") {
+	    log(input.value);
+	}
+	else {
+	    log("[" + userName + "] " + input.value);
+	}
 	input.value = "";
 }
 
