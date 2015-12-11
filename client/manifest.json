@@ -14,8 +14,7 @@
 	},
 	"sockets": {
 		"tcp": {
-			"connect": ["*"],
-			"secure": ["*"]
+			"connect": ["*"]
 		}
 	}
 }
