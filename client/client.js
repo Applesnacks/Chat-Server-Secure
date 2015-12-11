@@ -37,6 +37,10 @@ function log(contents) {
     if (userName === undefined && contents.search("] joined") != -1) {
         userName = contents.split("] [")[1].split("]")[0];
     }
+
+    else if (contents.search(userName + "] renamed to [") != -1) {
+        userName = contents.split("renamed to [")[1].split("]")[0];
+    }
 	var output = document.getElementById("output");
 	output.innerHTML = output.innerHTML + "<br>" + contents;
 }
