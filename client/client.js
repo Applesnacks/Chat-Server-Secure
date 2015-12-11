@@ -42,7 +42,7 @@ function log(contents) {
         userName = contents.split("renamed to [")[1].split("]")[0];
     }
 	var output = document.getElementById("output");
-	output.innerHTML = output.innerHTML + "<br>" + contents;
+	output.innerHTML = output.innerHTML + "<br>" + contents.replace("\n", "<br>");
 }
 
 tcp.create(socketProperties, function(newSocketInfo) {
