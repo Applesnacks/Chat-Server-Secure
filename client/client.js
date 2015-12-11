@@ -34,8 +34,8 @@ function onReceive(info) {
 
 
 function log(contents) {
-    if (userName === undefined && contents.search('] joined') != -1) {
-        userName = contents.substr((contents.search('[ ]') + 2), contents.search('] joined'));
+    if (userName === undefined && contents.search("] joined") != -1) {
+        userName = contents.split("] [")[1].split("]")[0];
     }
 	var output = document.getElementById("output");
 	output.innerHTML = output.innerHTML + "<br>" + contents;
@@ -74,7 +74,7 @@ function send() {
 	tcp.send(socketId, str2ab(input.value), function(resultCode, bytesSent) {
 		console.log(resultCode);
 	});
-	log('[' + userName + ']' + input.value);
+	log("[" + userName + "] " + input.value);
 	input.value = "";
 }
 
