@@ -3,8 +3,8 @@ window.tcp = chrome.sockets.tcp;
 window.socketProperties = {};
 window.secureOptions = {
 	"tlsVersion": {
-		"min": "tls1",
-		"max": "tls1"
+		"min": "tls1.2",
+		"max": "tls1.2"
 	}
 };
 window.userName = undefined;
