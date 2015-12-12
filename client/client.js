@@ -168,6 +168,8 @@ function connect() {
 function disconnect() {
     tcp.disconnect(socketId, function () {
 		log('Disconnected from server');
+		socketId = undefined;
+		userName = undefined;
 		
 		var button = document.getElementById('connect');
 		button.innerHTML = "Connect";
