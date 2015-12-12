@@ -1,35 +1,85 @@
 <!doctype html>
 <html>
-  <head>
-    <title>CPE-490 Chatroom Client</title>
-  </head>
-  <body>
-  <label>Server <input id="server" type="text" value="cpe490.dylanpraul.com"></label>
-<br>     
-  <label>Port <input id="port" type="text" value="5000"></label>
- <br> 
-  <!--Because this is fake I'm ok with it.-->
-  <label>Password <input id="pw" type="text" value="It's a Strong Password I Swear"></label>
-<br>
-  <button id="connect">Connect</button>
-<br>
-<br>
-  <input id="input" type="text"><button id="send">Send</button>
-  <div id="output"></div>
-    <script src="client.js"></script>
-    <script src="cryptojs/components/core.js"></script>
-    <script src="cryptojs/rollups/sha1.js"></script>
-    <script src="cryptojs/rollups/sha256.js"></script>
-    <script src="cryptojs/components/enc-base64.js"></script>
-    <script src="cryptojs/components/pbkdf2.js"></script>
-    <script src="cryptojs/components/evpkdf.js"></script>
-    <script src="cryptojs/components/cipher-core.js"></script>
-    <script src="cryptojs/rollups/aes.js"></script>
-    <script src="cryptojs/components/md5-min.js"></script>
-    <script src="cryptojs/components/evpkdf.js"></script>
-    <script src="cryptojs/components/pbkdf2.js"></script>
-    <script src="cryptojs/components/lib-typedarrays.js"></script>
-    <script src="cryptojs/components/pad-zeropadding-min.js"></script>
+<head>
 
-  </body>
+<title>CPE-490 Chatroom Client</title>
+<link rel="stylesheet" href="/css/bootstrap.min.css">
+<style>
+	.row {
+		margin-right: 0;
+		margin-left: 0;
+	}
+	.col-xs-2, .col-xs-6, .col-xs-10, .col-xs-3, .col-xs-12 {
+		padding-right: 0;
+		padding-left: 0;
+	}
+	
+	#sendarea {
+		position: absolute;
+		bottom: 0;
+		left: 0;
+		right: 0;
+	}
+	
+	#output {
+		position: relative;
+		bottom: 0;
+		height: 450px;
+		width: 100%;
+		overflow-y: auto;
+	}
+</style>
+
+</head>
+<body>
+
+<div class="row">
+	<div class="col-xs-3">
+		<button class="btn btn-primary btn-sm" id="connect">Connect</button>
+	</div>
+	<div class="col-xs-6">
+		<label for="server" class="sr-only">Server</label>
+		<input type="text" class="form-control" id="server" value="cpe490.dylanpraul.com" placeholder="Server">
+	</div>
+	<div class="col-xs-3">
+		<label for="port" class="sr-only">Port</label>
+		<input type="text" class="form-control" id="port" value="5000" placeholder="Port">
+	</div>
+</div>
+<div class="row">
+	<div class="col-xs-12">
+		<label for="pw" class="sr-only">Password</label>
+		<input type="text" class="form-control input-sm" id="pw" value="It's a Strong Password I Swear" placeholder="Password">
+	</div>
+</div>
+
+<div id="output"></div>
+
+<div id="sendarea" class="row">
+	<div class="col-xs-10">
+		<input id="input" class="form-control" type="text">
+	</div>
+	<div class="col-xs-2">
+		<button id="send" class="btn btn-default">Send</button>
+	</div>
+</div>
+
+  
+<script src="/js/cryptojs/components/core.js"></script>
+<script src="/js/cryptojs/rollups/sha1.js"></script>
+<script src="/js/cryptojs/rollups/sha256.js"></script>
+<script src="/js/cryptojs/components/enc-base64.js"></script>
+<script src="/js/cryptojs/components/pbkdf2.js"></script>
+<script src="/js/cryptojs/components/evpkdf.js"></script>
+<script src="/js/cryptojs/components/cipher-core.js"></script>
+<script src="/js/cryptojs/rollups/aes.js"></script>
+<script src="/js/cryptojs/components/md5-min.js"></script>
+<script src="/js/cryptojs/components/evpkdf.js"></script>
+<script src="/js/cryptojs/components/pbkdf2.js"></script>
+<script src="/js/cryptojs/components/lib-typedarrays.js"></script>
+<script src="/js/cryptojs/components/pad-zeropadding-min.js"></script>
+
+<script src="client.js"></script>
+
+</body>
 </html>

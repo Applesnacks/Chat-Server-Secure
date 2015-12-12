@@ -29,7 +29,8 @@ function log(contents) {
         userName = contents.split("renamed to [")[1].split("]")[0];
     }
 	var output = document.getElementById("output");
-	output.innerHTML = output.innerHTML + "<br>" + contents.slice(0,-1).replace("\n", "");
+	output.innerHTML = output.innerHTML + "<br>" + contents.replace("\r\n", "<br>");
+	output.scrollTop = output.scrollHeight;
 }
 
 function log_others(contents){
@@ -104,16 +105,20 @@ function decrypt(input,pw){
 
 function send() {
 	var input = document.getElementById("input").value;
+	if (input.length == 0) {
+		return;
+	}
 	var output = checkTextOut(input);
 	document.getElementById("input").value = "";
-
 }
 
+//check to see what should and should not be encrypted
 function checkTextOut(text) {
 	var pw = document.getElementById("pw").value;	
     var textLen = text.length;
 	var command = 0;
 
+    //check for key words in the first word
     switch (text.split(" ", 1).toString().toLowerCase()) {
         case "\\quit":
             var output = text;
@@ -128,7 +133,7 @@ function checkTextOut(text) {
             command = 3;
             break;
         case "\\me":
-            var output =  "\\ME " + encrypt(text.slice(4,textLen),pw);
+            var output = "\\ME " + encrypt(text.slice(4,textLen),pw);
             command = 4;
             break;
         default:
@@ -136,6 +141,7 @@ function checkTextOut(text) {
     }
     console.log("Sending:" + output.toString());
 
+    //send message to server
 	tcp.send(socketId, str2ab(output), function(resultCode, bytesSent) {
 		console.log(resultCode);
 	});
@@ -155,10 +161,12 @@ function onReceive(info) {
 
 }
 
+//check what is and isn't encrypted upon reception of message
 function checkTextIn(text) {
     var textLen = text.length;
 	var pw = document.getElementById("pw").value;
 	var output = "";
+    //Regex expression for non-whitespace characters within brackets
     var re = new RegExp(/\[\S+\] /g);
     var meRe = new RegExp(/\*\*\S+ /g);
     var me = text.match(meRe);
@@ -166,15 +174,16 @@ function checkTextIn(text) {
 	var users = text.match(re);
 	var message = text.replace(re,'');
 	if (users) {
-		var length=users.length;
+	    var length = users.length;
+        //welcome message
 		if (userName === undefined){
 			output = text;
 		}
-	    else if (length>0) {
-	    	for (i=0;i<length;i++){
+	    else if (length > 0) {
+	    	for (i = 0; i < length; i++){
 	    		output = output + users[i] + ' ';
 	    	}
-	    	if (users[0]=="[server] ")
+	    	if (users[0] == "[server] ")
 	    		output = output + message;
 	    	else
 	    		output = output + decrypt(message,pw);
@@ -191,5 +200,12 @@ function checkTextIn(text) {
     log_others(output);
 }
 
+function onMessageType(event) {
+	if (event.keyCode == 13) {
+		send();
+	}
+}
+
 document.getElementById('connect').onclick = connect;
 document.getElementById('send').onclick = send;
+document.getElementById('input').onkeypress = onMessageType;
