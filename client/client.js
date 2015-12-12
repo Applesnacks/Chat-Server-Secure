@@ -1,4 +1,7 @@
-window.socketId;
+/*
+ * GLOBALS
+ */
+
 window.tcp = chrome.sockets.tcp;
 window.socketProperties = {};
 window.secureOptions = {
@@ -7,8 +10,16 @@ window.secureOptions = {
 		"max": "tls1.2"
 	}
 };
-window.userName = undefined;
 
+window.socketId = undefined;
+window.userName = undefined;
+window.decryptSplit = new RegExp(/[^|]+/g);
+window.encryptSplit = new RegExp(/.{1,15}/g);
+
+
+/*
+ * UTIL
+ */
 
 function ab2str(buf) {
 	return String.fromCharCode.apply(null, new Uint8Array(buf));
@@ -17,188 +28,195 @@ function ab2str(buf) {
 function str2ab(str) {
 	var buf = new ArrayBuffer(str.length * 2); // 2 bytes for each char
 	var bufView = new Uint8Array(buf);
-	for (var i=0, strLen=str.length; i < strLen; i++) {
+	for (var i = 0, strLen=str.length; i < strLen; i++) {
 		bufView[i] = str.charCodeAt(i);
 	}
-	console.log(buf);
 	return buf;
 }
 
-function log(contents) {
-    if (contents.indexOf(userName + "] renamed to [") != -1) {
-        userName = contents.split("renamed to [")[1].split("]")[0];
-    }
-	var output = document.getElementById("output");
-	output.innerHTML = output.innerHTML + "<br>" + contents.replace("\r\n", "<br>");
-	output.scrollTop = output.scrollHeight;
-}
 
-function log_others(contents){
-   if (userName === undefined && contents.indexOf("] joined") != -1) {
-        userName = contents.split("] [")[1].split("]")[0];
-    }
+/*
+ * ENCRYPTION
+ */
 
-	var output = document.getElementById("output");
-	output.innerHTML = output.innerHTML + "<br>" + contents.replace("\n", "");
-}
-
-tcp.create(socketProperties, function(newSocketInfo) {
-	socketId = newSocketInfo.socketId;
-});
-
-function connect() {
-	tcp.onReceive.addListener(onReceive);
-	tcp.setPaused(socketId, true, function() {
-		var server = document.getElementById("server").value;
-		var port = parseInt(document.getElementById("port").value);
-		tcp.connect(socketId, server, port, function () {
-			tcp.secure(socketId, secureOptions, function() {
-				tcp.setPaused(socketId, false, function() {
-				});
-			});
-		});
-	});
-
-	this.innerHTML = "Disconnect";
-	this.onclick = disconnect;
-}
-
-function disconnect() {
-    tcp.disconnect(socketId, function () { });
-    this.innerHTML = "Connect";
-    this.onclick = connect;
-    log('Disconnected from server');
-}
-
-function blockInputString(input,length){
-	return input.match(new RegExp('.{1,' + length + '}', 'g'));
-}
-
-function encrypt(input,pw){
-	var splitInput = blockInputString(input,15);		//Because breaks for block size 16 for some reason.
+function encrypt(input, pw){
+	var splitInput = input.match(encryptSplit);  // Because breaks for block size 16 for some reason.
 
 	var ciphertext = [];
-	for(i=0;i<splitInput.length;i++){
-		ciphertext.push(CryptoJS.AES.encrypt(splitInput[i], pw,{hasher:CryptoJS.SHA256}).toString()+'|');
+	for (var i = 0; i < splitInput.length; i++){
+		ciphertext.push(CryptoJS.AES.encrypt(splitInput[i], pw, {hasher: CryptoJS.SHA256}).toString() + '|');
 	}
-	ciphertext[ciphertext.length-1] = ciphertext[ciphertext.length-1].slice(0, -1);	//Remove delim on last.
-	console.log("PLAINTEXT:" + splitInput.toString());
-	
-	console.log("CIPHERTEXT:" + ciphertext.toString());
+	ciphertext[ciphertext.length - 1] = ciphertext[ciphertext.length-1].slice(0, -1);	 // Remove delim on last.
 
 	return ciphertext.join('');
 }
 
 function decrypt(input,pw){
-	var splitInput = input.match(new RegExp(/[^|]+/g));
-
-	console.log("CIPHERTEXT:" + splitInput.toString());
+	var splitInput = input.match(decryptSplit);
 
 	var decRaw = [];
-	for(i=0;i<splitInput.length;i++){
+	for (var i = 0; i < splitInput.length; i++){
 		decRaw.push(CryptoJS.AES.decrypt(splitInput[i], pw).toString(CryptoJS.enc.Utf8));
 	}
-	console.log("PLAINTEXT:" + decRaw.toString());
 
 	return decRaw.join('');
 }
 
-function send() {
-	var input = document.getElementById("input").value;
-	if (input.length == 0) {
-		return;
+
+/*
+ * MESSAGE LOG
+ */
+ 
+function log(contents) {
+	if (userName === undefined && contents.indexOf("] joined") >= 0) {  // Only occurs on initial connection.
+        userName = contents.split("] [")[1].split("]")[0];
+    }
+    else if (contents.indexOf(userName + "] renamed to [") >= 0) {
+        userName = contents.split("renamed to [")[1].split("]")[0];
+    }
+	
+	if (!contents.endsWith('\r\n')) {
+		contents += "\r\n";
 	}
-	var output = checkTextOut(input);
-	document.getElementById("input").value = "";
+	
+	var output = document.getElementById("output");
+	output.appendChild(document.createTextNode(contents));
+	output.scrollTop = output.scrollHeight;
 }
 
-//check to see what should and should not be encrypted
-function checkTextOut(text) {
-	var pw = document.getElementById("pw").value;	
-    var textLen = text.length;
-	var command = 0;
 
-    //check for key words in the first word
-    switch (text.split(" ", 1).toString().toLowerCase()) {
+function checkTextOut(text) {  //check to see what should and should not be encrypted
+	var pw = document.getElementById("pw").value;
+	var inputParts = text.split(" ");
+	var output;
+
+    switch (inputParts[0].toLowerCase()) {
         case "\\quit":
-            var output = text;
-            command = 1;
-            break;
         case "\\ping":
-            var output = text;
-            command = 2;
-            break;
         case "\\name":
-            var output = text;
-            command = 3;
-            break;
+        case "\\active":
+		case "\\help":
+			output = text;
+			break;
+		case "\\private":
+			inputParts.shift();  // Remove /private
+			output = "\\private " + inputParts.shift() + " " + encrypt(inputParts.join(" "), pw);
+			break;
         case "\\me":
-            var output = "\\ME " + encrypt(text.slice(4,textLen),pw);
-            command = 4;
+            output = "\\me " + encrypt(text.slice(4, text.length), pw);
             break;
-        default:
-            var output = encrypt(text,pw);
+        default:  // no commands found.
+            output = encrypt(text, pw);
     }
-    console.log("Sending:" + output.toString());
+	
+	return output;
+}
 
-    //send message to server
-	tcp.send(socketId, str2ab(output), function(resultCode, bytesSent) {
-		console.log(resultCode);
+function checkTextIn(text) {  //check what is and isn't encrypted upon reception of message
+	var pw = document.getElementById("pw").value;
+	var output;
+	
+	if (text[0] == '*') {
+		var split = text.split(" ");
+		output = decrypt(split.pop().slice(0, -2), pw) + "**";  // Decrypt message portion
+		output = "**" + split.join(" ").slice(2) + " " + output;  // re-append username
+	}
+	else if (text.indexOf("[server]") == 0) {
+		output = text;
+	}
+	else if (text[0] == '[') {
+		var split = text.split("] ");
+		output = split.shift() + "] ";
+		output += decrypt(split.join("] "), pw);  // first portion is username
+	}
+	else {
+		output = text;
+	}
+	
+	log(output);
+}
+
+
+/*
+ * SOCKET COMMANDS
+ */
+ 
+// Only run this once.
+tcp.onReceive.addListener(onReceive);
+
+function connect() {
+	var server = document.getElementById("server").value;
+	var port = parseInt(document.getElementById("port").value);
+	
+	tcp.create(socketProperties, function(newSocketInfo) {
+		socketId = newSocketInfo.socketId;
+		
+		tcp.setPaused(socketId, true, function() {  // onReceive must be paused for connection and secure		
+			tcp.connect(socketId, server, port, function () {
+				tcp.secure(socketId, secureOptions, function() {
+					tcp.setPaused(socketId, false, function() {  // re-enable onReceive to open pipe.
+						var button = document.getElementById('connect');
+						button.innerHTML = "Disconnect";
+						button.onclick = disconnect;
+					});
+				});
+			});
+		});
 	});
-	if (command) 
-	    log(text);
-//	else 
-//	    log("[" + userName + "] " + text);
+}
+
+function disconnect() {
+    tcp.disconnect(socketId, function () {
+		log('Disconnected from server');
+		
+		var button = document.getElementById('connect');
+		button.innerHTML = "Connect";
+		button.onclick = connect;
+	});
 }
 
 function onReceive(info) {
-	console.log(info);
-	checkTextIn(ab2str(info.data));
-	
 	if (info.socketId != socketId) {
 		return;
 	}
-
+	
+	checkTextIn(ab2str(info.data));
 }
 
-//check what is and isn't encrypted upon reception of message
-function checkTextIn(text) {
-    var textLen = text.length;
-	var pw = document.getElementById("pw").value;
-	var output = "";
-    //Regex expression for non-whitespace characters within brackets
-    var re = new RegExp(/\[\S+\] /g);
-    var meRe = new RegExp(/\*\*\S+ /g);
-    var me = text.match(meRe);
-
-	var users = text.match(re);
-	var message = text.replace(re,'');
-	if (users) {
-	    var length = users.length;
-        //welcome message
-		if (userName === undefined){
-			output = text;
-		}
-	    else if (length > 0) {
-	    	for (i = 0; i < length; i++){
-	    		output = output + users[i] + ' ';
-	    	}
-	    	if (users[0] == "[server] ")
-	    		output = output + message;
-	    	else
-	    		output = output + decrypt(message,pw);
-	    }
+function send() {
+	var input = document.getElementById("input");
+	if (input.value.length == 0 || socketId === undefined) {
+		return;
 	}
-	else if (me){
-		text = text.replace(meRe, '');
-        output = me[0] + decrypt(text.slice(0,-2),pw) + "**";
-    }
-    else
-    	output = text;
-
-
-    log_others(output);
+	
+	var output = checkTextOut(input.value);
+	
+	tcp.send(socketId, str2ab(output), function(resultCode, bytesSent) {
+		if (resultCode < 0) {
+			log("Error sending.");
+		}
+		else {
+			var msg = input.value;
+			if (msg.startsWith("\\me")) {
+				log("**" + userName + " " + msg.slice(4) + "**");
+			}
+			else if (input.value.indexOf("\\") == 0) {
+			}
+			else {  // Not a command, so log with username in front.
+				log("[" + userName + "] " + msg);
+			}
+		}
+		input.value = "";
+	});
 }
+
+document.getElementById('connect').onclick = connect;
+document.getElementById('send').onclick = send;
+
+
+/*
+ * PAGE EVENTS
+ */
 
 function onMessageType(event) {
 	if (event.keyCode == 13) {
@@ -206,6 +224,4 @@ function onMessageType(event) {
 	}
 }
 
-document.getElementById('connect').onclick = connect;
-document.getElementById('send').onclick = send;
 document.getElementById('input').onkeypress = onMessageType;
